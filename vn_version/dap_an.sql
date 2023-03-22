@@ -18,16 +18,17 @@ FROM
 	khach_hang
 WHERE
 	TIMESTAMPDIFF(Year,ngay_sinh,now())  BETWEEN 18 AND 50
-	and(dia_chi like '%Quang Tri%'
-		OR dia_chi like '%Quang Nam%');
+	and(dia_chi like '%Da Nang%'
+		OR dia_chi like '%Quang Tri%');
 
 
 
--- 4.	Đếm xem tương ứng với mỗi khách hàng đã từng đặt phòng bao nhiêu lần. Kết quả hiển thị được sắp xếp tăng dần theo số lần đặt phòng của khách hàng. Chỉ đếm những khách hàng nào có Tên loại khách hàng là “Diamond”.
+-- 4.	Đếm xem tương ứng với mỗi khách hàng đã từng đặt phòng bao nhiêu lần. Kết quả hiển thị được sắp xếp tăng dần theo số lần 
+--		đặt phòng của khách hàng. Chỉ đếm những khách hàng nào có Tên loại khách hàng là “Diamond”.
 
 SELECT
     kh.ho_ten,
-    count(hd.ma_khach_hang) so_lan_dat,
+    count(hd.ma_khach_hang) so_lan_dat
 from
     khach_hang kh
     JOIN loai_khach lk USING(ma_loai_khach)
@@ -41,43 +42,45 @@ ORDER BY
 
 
 
--- 5.	Hiển thị ma_khach_hang, ho_ten, ten_loai_khach, ma_hop_dong, ten_dich_vu, ngay_lam_hop_dong, ngay_ket_thuc, tong_tien (Với tổng tiền được tính theo công thức như sau: Chi Phí Thuê + Số Lượng * Giá, với Số Lượng và Giá là từ bảng dich_vu_di_kem, hop_dong_chi_tiet) cho tất cả các khách hàng đã từng đặt phòng. (những khách hàng nào chưa từng đặt phòng cũng phải hiển thị ra).
-
-SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
+-- 5.	Hiển thị ma_khach_hang, ho_ten, ten_loai_khach, ma_hop_dong, ten_dich_vu, ngay_lam_hop_dong, ngay_ket_thuc, 
+--		tong_tien (Với tổng tiền được tính theo công thức như sau: Chi Phí Thuê + Số Lượng * Giá, với Số Lượng và 
+--		Giá là từ bảng dich_vu_di_kem, hop_dong_chi_tiet) cho tất cả các khách hàng đã từng đặt phòng.
+--		(những khách hàng nào chưa từng đặt phòng cũng phải hiển thị ra).
 
 SELECT
-    kh.ma_khach_hang,
-    kh.ho_ten,
-    lk.ten_loai_khach,
-    hd.ma_hop_dong,
-    dv.ten_dich_vu,
-    hd.ngay_lam_hop_dong,
-    hd.ngay_ket_thuc,
-    (sum(dvdk.gia * hdct.so_luong) + tmp.gia_dv) tong_tien
-FROM
-    khach_hang kh
-    left JOIN loai_khach lk USING (ma_loai_khach)
-    left join hop_dong hd USING (ma_khach_hang)
-    left join dich_vu dv USING (ma_dich_vu)
-    left JOIN hop_dong_chi_tiet hdct USING (ma_hop_dong)
-    left join dich_vu_di_kem dvdk USING (ma_dich_vu_di_kem)
-    left JOIN (
+    ma_khach_hang,
+    ho_ten,
+    ten_loai_khach,
+    t.ma_hop_dong,
+    ten_dich_vu,
+    ngay_lam_hop_dong,
+    ngay_ket_thuc,
+    (IFNULL(sum(so_luong * gia), 0) + t.cpt) tongtien
+from
+    khach_hang
+    LEFT JOIN loai_khach USING(ma_loai_khach)
+    LEFT JOIN hop_dong USING(ma_khach_hang)
+    LEFT JOIN hop_dong_chi_tiet USING(ma_hop_dong)
+    LEFT JOIN dich_vu_di_kem USING(ma_dich_vu_di_kem)
+    LEFT JOIN (
         SELECT
-            kh.ma_khach_hang as ma_khach_hang,
-            sum(dv.chi_phi_thue) as gia_dv
+            ten_dich_vu,
+            ma_hop_dong,
+            sum(chi_phi_thue) cpt
         from
-            khach_hang kh
-            join hop_dong hd USING (ma_khach_hang)
-            join dich_vu dv USING (ma_dich_vu)
-        GROUP by
-            kh.ma_khach_hang
-    ) tmp USING (ma_khach_hang)
-GROUP by
-    kh.ma_khach_hang;
+            khach_hang
+            LEFT JOIN hop_dong USING(ma_khach_hang)
+            LEFT JOIN dich_vu USING(ma_dich_vu)
+        GROUP BY
+            ma_hop_dong
+    ) t USING(ma_hop_dong)
+GROUP BY
+    ma_hop_dong;
     
 	
     
--- 6.	Hiển thị ma_dich_vu, ten_dich_vu, dien_tich, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ chưa từng được khách hàng thực hiện đặt từ quý 1 của năm 2021 (Quý 1 là tháng 1, 2, 3).
+-- 6.	Hiển thị ma_dich_vu, ten_dich_vu, dien_tich, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ
+--		chưa từng được khách hàng thực hiện đặt từ quý 1 của năm 2021 (Quý 1 là tháng 1, 2, 3).
 
 SELECT
     ma_dich_vu,
@@ -96,8 +99,9 @@ WHERE
             dich_vu
             join hop_dong using (ma_dich_vu)
         WHERE
-            ngay_lam_hop_dong BETWEEN '2021-01-01'
-            and '2021-03-31'
+            month(ngay_lam_hop_dong) BETWEEN 1
+            and 3
+            and year(ngay_lam_hop_dong) = 2021
     );
 
 
