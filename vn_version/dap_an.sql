@@ -24,7 +24,7 @@ WHERE
 
 
 -- 4.	Đếm xem tương ứng với mỗi khách hàng đã từng đặt phòng bao nhiêu lần. Kết quả hiển thị được sắp xếp tăng dần theo số lần 
---		đặt phòng của khách hàng. Chỉ đếm những khách hàng nào có Tên loại khách hàng là “Diamond”.
+--	đặt phòng của khách hàng. Chỉ đếm những khách hàng nào có Tên loại khách hàng là “Diamond”.
 
 SELECT
     kh.ho_ten,
@@ -43,9 +43,9 @@ ORDER BY
 
 
 -- 5.	Hiển thị ma_khach_hang, ho_ten, ten_loai_khach, ma_hop_dong, ten_dich_vu, ngay_lam_hop_dong, ngay_ket_thuc, 
---		tong_tien (Với tổng tiền được tính theo công thức như sau: Chi Phí Thuê + Số Lượng * Giá, với Số Lượng và 
---		Giá là từ bảng dich_vu_di_kem, hop_dong_chi_tiet) cho tất cả các khách hàng đã từng đặt phòng.
---		(những khách hàng nào chưa từng đặt phòng cũng phải hiển thị ra).
+--	tong_tien (Với tổng tiền được tính theo công thức như sau: Chi Phí Thuê + Số Lượng * Giá, với Số Lượng và 
+--	Giá là từ bảng dich_vu_di_kem, hop_dong_chi_tiet) cho tất cả các khách hàng đã từng đặt phòng.
+--	(những khách hàng nào chưa từng đặt phòng cũng phải hiển thị ra).
 
 SELECT
     ma_khach_hang,
@@ -55,7 +55,7 @@ SELECT
     ten_dich_vu,
     ngay_lam_hop_dong,
     ngay_ket_thuc,
-    (IFNULL(sum(so_luong * gia), 0) + t.cpt) tongtien
+    (IFNULL(sum(so_luong * gia), 0) + IFNULL(t.cpt, 0)) tongtien
 from
     khach_hang
     LEFT JOIN loai_khach USING(ma_loai_khach)
@@ -80,7 +80,7 @@ GROUP BY
 	
     
 -- 6.	Hiển thị ma_dich_vu, ten_dich_vu, dien_tich, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ
---		chưa từng được khách hàng thực hiện đặt từ quý 1 của năm 2021 (Quý 1 là tháng 1, 2, 3).
+--	chưa từng được khách hàng thực hiện đặt từ quý 1 của năm 2021 (Quý 1 là tháng 1, 2, 3).
 
 SELECT
     ma_dich_vu,
@@ -106,7 +106,8 @@ WHERE
 
 
 
--- 7.	Hiển thị thông tin ma_dich_vu, ten_dich_vu, dien_tich, so_nguoi_toi_da, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ đã từng được khách hàng đặt phòng trong năm 2020 nhưng chưa từng được khách hàng đặt phòng trong năm 2021.
+-- 7.	Hiển thị thông tin ma_dich_vu, ten_dich_vu, dien_tich, so_nguoi_toi_da, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ
+-- đã từng được khách hàng đặt phòng trong năm 2020 nhưng chưa từng được khách hàng đặt phòng trong năm 2021.
 
 SELECT
     ma_dich_vu, ten_dich_vu, dien_tich, so_nguoi_toi_da, chi_phi_thue, ten_loai_dich_vu
@@ -168,7 +169,7 @@ FROM
 
 SELECT
     tmp.thang,
-    co.so_lan_khach_dat
+    IFNULL(co.so_lan_khach_dat, 0)
 FROM
     (
         SELECT
@@ -221,7 +222,8 @@ FROM
 
 
 
--- 10.	Hiển thị thông tin tương ứng với từng hợp đồng thì đã sử dụng bao nhiêu dịch vụ đi kèm. Kết quả hiển thị bao gồm ma_hop_dong, ngay_lam_hop_dong, ngay_ket_thuc, tien_dat_coc, so_luong_dich_vu_di_kem (được tính dựa trên việc sum so_luong ở dich_vu_di_kem).
+-- 10.	Hiển thị thông tin tương ứng với từng hợp đồng thì đã sử dụng bao nhiêu dịch vụ đi kèm. Kết quả hiển thị bao gồm ma_hop_dong,
+-- ngay_lam_hop_dong, ngay_ket_thuc, tien_dat_coc, so_luong_dich_vu_di_kem (được tính dựa trên việc sum so_luong ở dich_vu_di_kem).
 
 SELECT
     hd.ma_hop_dong,
@@ -257,39 +259,77 @@ WHERE
 
 
 
--- 12.	Hiển thị thông tin ma_hop_dong, ho_ten (nhân viên), ho_ten (khách hàng), so_dien_thoai (khách hàng), ten_dich_vu, so_luong_dich_vu_di_kem (được tính dựa trên việc sum so_luong ở dich_vu_di_kem), tien_dat_coc của tất cả các dịch vụ đã từng được khách hàng đặt vào 3 tháng cuối năm 2020 nhưng chưa từng được khách hàng đặt vào 6 tháng đầu năm 2021.
+-- 12.	Hiển thị thông tin ma_hop_dong, ho_ten (nhân viên), ho_ten (khách hàng), so_dien_thoai (khách hàng), ten_dich_vu,
+-- so_luong_dich_vu_di_kem (được tính dựa trên việc sum so_luong ở dich_vu_di_kem), tien_dat_coc của tất cả các dịch vụ 
+-- đã từng được khách hàng đặt vào 3 tháng cuối năm 2020 nhưng chưa từng được khách hàng đặt vào 6 tháng đầu năm 2021.
 
 SELECT
     ma_hop_dong,
-    nv.ho_ten,
-    kh.ho_ten,
+    nv.ho_ten nhan_vien,
+    kh.ho_ten khach_hang,
     kh.so_dien_thoai,
     ten_dich_vu,
-    sum(tien_dat_coc) tong_tien_coc,
-    sum(so_luong) tong_so_luong_dvdk
+    SUM(tien_dat_coc) tong_tien_coc,
+    SUM(so_luong) tong_so_luong_dvdk,
+    ngay_lam_hop_dong
 from
     hop_dong
-    left join nhan_vien nv USING (ma_nhan_vien)
-    left JOIN dich_vu USING (ma_dich_vu)
-    left JOIN khach_hang kh USING (ma_khach_hang)
-    left JOIN hop_dong_chi_tiet USING (ma_hop_dong)
-    left JOIN dich_vu_di_kem USING (ma_dich_vu_di_kem)
+    LEFT JOIN nhan_vien nv USING (ma_nhan_vien)
+    LEFT JOIN dich_vu USING (ma_dich_vu)
+    LEFT JOIN khach_hang kh USING (ma_khach_hang)
+    LEFT JOIN hop_dong_chi_tiet USING (ma_hop_dong)
+    LEFT JOIN dich_vu_di_kem USING (ma_dich_vu_di_kem)
 WHERE
-    (
-        ngay_lam_hop_dong BETWEEN '2020-10-01'
-        AND '2020-12-30'
+    ma_khach_hang IN (
+        SELECT
+            ma_khach_hang
+        FROM
+            khach_hang
+            JOIN hop_dong USING(ma_khach_hang)
+        WHERE
+            ngay_lam_hop_dong BETWEEN '2020-10-01'
+            AND '2020-12-30'
     )
-    and (
-        ngay_lam_hop_dong NOT BETWEEN '2021-01-01'
-        AND '2021-06-30'
+    and ma_khach_hang NOT IN (
+        SELECT
+            ma_khach_hang
+        FROM
+            khach_hang
+            JOIN hop_dong USING(ma_khach_hang)
+        WHERE
+            ngay_lam_hop_dong BETWEEN '2021-01-01'
+            AND '2021-06-30'
     )
-GROUP by
+GROUP BY
     ma_hop_dong;
     
     
 	
--- 13.  Hiển thị thông tin các Dịch vụ đi kèm được sử dụng nhiều nhất bởi các Khách hàng đã đặt phòng. (Lưu ý là có thể có nhiều dịch vụ có số lần sử dụng nhiều như nhau).
+-- 13.  Hiển thị thông tin các Dịch vụ đi kèm được sử dụng nhiều nhất bởi các Khách hàng đã đặt phòng.
+-- (Lưu ý là có thể có nhiều dịch vụ có số lần sử dụng nhiều như nhau).
 
+
+-- solution1
+SELECT
+    ma_dich_vu_di_kem,
+    ten_dich_vu_di_kem,
+    sum(so_luong) tong_so_luong_dvdk
+FROM
+    dich_vu_di_kem
+    JOIN hop_dong_chi_tiet USING(ma_dich_vu_di_kem)
+GROUP by
+    ma_dich_vu_di_kem
+having
+    tong_so_luong_dvdk >= all(
+        select
+            sum(so_luong) tong_so_luong_dvdk
+        FROM
+            hop_dong_chi_tiet
+        GROUP by
+            ma_dich_vu_di_kem
+    );
+	
+-- solution2	
 With count_used AS (
     SELECT
         ma_dich_vu_di_kem,
@@ -317,7 +357,8 @@ WHERE
     
 
 
--- 14.  Hiển thị thông tin tất cả các Dịch vụ đi kèm chỉ mới được sử dụng một lần duy nhất. Thông tin hiển thị bao gồm ma_hop_dong, ten_loai_dich_vu, ten_dich_vu_di_kem, so_lan_su_dung (được tính dựa trên việc count các ma_dich_vu_di_kem).
+-- 14.  Hiển thị thông tin tất cả các Dịch vụ đi kèm chỉ mới được sử dụng một lần duy nhất. Thông tin hiển thị
+-- bao gồm ma_hop_dong, ten_loai_dich_vu, ten_dich_vu_di_kem, so_lan_su_dung (được tính dựa trên việc count các ma_dich_vu_di_kem).
 
 SELECT
 		ma_hop_dong,
@@ -336,7 +377,8 @@ SELECT
         
 
 
--- 15.  Hiển thi thông tin của tất cả nhân viên bao gồm ma_nhan_vien, ho_ten, ten_trinh_do, ten_bo_phan, so_dien_thoai, dia_chi mới chỉ lập được tối đa 3 hợp đồng từ năm 2020 đến 2021.
+-- 15.  Hiển thi thông tin của tất cả nhân viên bao gồm ma_nhan_vien, ho_ten, ten_trinh_do, ten_bo_phan, so_dien_thoai,
+-- dia_chi mới chỉ lập được tối đa 3 hợp đồng từ năm 2020 đến 2021.
 
 SELECT
     ma_nhan_vien,
@@ -368,7 +410,7 @@ DELETE FROM
 WHERE
     NOT EXISTS (
         select
-            *
+            1
         from
             hop_dong
         WHERE
@@ -379,7 +421,8 @@ WHERE
 	
 	
 	
--- 17.	Cập nhật thông tin những khách hàng có ten_loai_khach từ Platinium lên Diamond, chỉ cập nhật những khách hàng đã từng đặt phòng với Tổng Tiền thanh toán trong năm 2021 là lớn hơn 10.000.000 VNĐ
+-- 17.	Cập nhật thông tin những khách hàng có ten_loai_khach từ Platinium lên Diamond, chỉ cập nhật những khách hàng
+-- đã từng đặt phòng với Tổng Tiền thanh toán trong năm 2021 là lớn hơn 10.000.000 VNĐ
 
 UPDATE
     khach_hang
@@ -429,7 +472,7 @@ WHERE
 	
 	
 -- 18.	Xóa những khách hàng có hợp đồng trước năm 2021 (chú ý ràng buộc giữa các bảng).
--- After set CASCADE
+-- After set CASCADE or SET FOREIGN_KEY_CHECKS=OFF;
 	
 DELETE FROM
     khach_hang kh
@@ -474,7 +517,8 @@ WHERE
 	
 	
 	
--- 20.	Hiển thị thông tin của tất cả các nhân viên và khách hàng có trong hệ thống, thông tin hiển thị bao gồm id (ma_nhan_vien, ma_khach_hang), ho_ten, email, so_dien_thoai, ngay_sinh, dia_chi.
+-- 20.	Hiển thị thông tin của tất cả các nhân viên và khách hàng có trong hệ thống, thông tin hiển thị bao gồm id
+-- (ma_nhan_vien, ma_khach_hang), ho_ten, email, so_dien_thoai, ngay_sinh, dia_chi.
 
 SELECT
     ma_nhan_vien as id,
@@ -498,7 +542,8 @@ FROM
 	
 	
 	
--- 21.	Tạo khung nhìn có tên là v_nhan_vien để lấy được thông tin của tất cả các nhân viên có địa chỉ là “Hải Châu” và đã từng lập hợp đồng cho một hoặc nhiều khách hàng bất kì với ngày lập hợp đồng nam 2021
+-- 21.	Tạo khung nhìn có tên là v_nhan_vien để lấy được thông tin của tất cả các nhân viên có địa chỉ là “Hải Châu”
+-- và đã từng lập hợp đồng cho một hoặc nhiều khách hàng bất kì với ngày lập hợp đồng nam 2021
 
 create view v_nhan_vien as
 select
@@ -532,7 +577,8 @@ END
 
 
 
--- 24.	Tạo Stored Procedure sp_them_moi_hop_dong dùng để thêm mới vào bảng hop_dong với yêu cầu sp_them_moi_hop_dong phải thực hiện kiểm tra tính hợp lệ của dữ liệu bổ sung, với nguyên tắc không được trùng khóa chính và đảm bảo toàn vẹn tham chiếu đến các bảng liên quan.
+-- 24.	Tạo Stored Procedure sp_them_moi_hop_dong dùng để thêm mới vào bảng hop_dong với yêu cầu sp_them_moi_hop_dong phải
+-- thực hiện kiểm tra tính hợp lệ của dữ liệu bổ sung, với nguyên tắc không được trùng khóa chính và đảm bảo toàn vẹn tham chiếu đến các bảng liên quan.
 
 DELIMITER // 
 CREATE PROCEDURE sp_them_moi_hop_dong
@@ -575,7 +621,8 @@ END
 
 
 
--- 25.	Tạo Trigger có tên tr_xoa_hop_dong khi xóa bản ghi trong bảng hop_dong thì hiển thị tổng số lượng bản ghi còn lại có trong bảng hop_dong ra giao diện console của database.
+-- 25.	Tạo Trigger có tên tr_xoa_hop_dong khi xóa bản ghi trong bảng hop_dong thì hiển thị tổng số lượng bản ghi
+-- còn lại có trong bảng hop_dong ra giao diện console của database.
 
 DELIMITER //
 CREATE TRIGGER tr_xoa_hop_dong
@@ -590,7 +637,9 @@ delete from hop_dong where ma_hop_dong =1;
 
 
 
--- 26.	Tạo Trigger có tên tr_cap_nhat_hop_dong khi cập nhật ngày kết thúc hợp đồng, cần kiểm tra xem thời gian cập nhật có phù hợp hay không, với quy tắc sau: Ngày kết thúc hợp đồng phải lớn hơn ngày làm hợp đồng ít nhất là 2 ngày. Nếu dữ liệu hợp lệ thì cho phép cập nhật, nếu dữ liệu không hợp lệ thì in ra thông báo “Ngày kết thúc hợp đồng phải lớn hơn ngày làm hợp đồng ít nhất là 2 ngày” trên console của database.
+-- 26.	Tạo Trigger có tên tr_cap_nhat_hop_dong khi cập nhật ngày kết thúc hợp đồng, cần kiểm tra xem thời gian cập nhật có phù hợp hay không,
+-- với quy tắc sau: Ngày kết thúc hợp đồng phải lớn hơn ngày làm hợp đồng ít nhất là 2 ngày. Nếu dữ liệu hợp lệ thì cho phép cập nhật, 
+--nếu dữ liệu không hợp lệ thì in ra thông báo “Ngày kết thúc hợp đồng phải lớn hơn ngày làm hợp đồng ít nhất là 2 ngày” trên console của database.
 
 DELIMITER //
 CREATE trigger tr_cap_nhat_hop_dong
@@ -605,7 +654,9 @@ END
 
 -- 27.	Tạo Function thực hiện yêu cầu sau:
 -- a.	Tạo Function func_dem_dich_vu: Đếm các dịch vụ đã được sử dụng với tổng tiền là > 2.000.000 VNĐ.
--- b.	Tạo Function func_tinh_thoi_gian_hop_dong: Tính khoảng thời gian dài nhất tính từ lúc bắt đầu làm hợp đồng đến lúc kết thúc hợp đồng mà khách hàng đã thực hiện thuê dịch vụ (lưu ý chỉ xét các khoảng thời gian dựa vào từng lần làm hợp đồng thuê dịch vụ, không xét trên toàn bộ các lần làm hợp đồng). Mã của khách hàng được truyền vào như là 1 tham số của function này.
+-- b.	Tạo Function func_tinh_thoi_gian_hop_dong: Tính khoảng thời gian dài nhất tính từ lúc bắt đầu làm hợp đồng đến lúc kết thúc hợp đồng
+-- mà khách hàng đã thực hiện thuê dịch vụ (lưu ý chỉ xét các khoảng thời gian dựa vào từng lần làm hợp đồng thuê dịch vụ, không xét trên
+-- toàn bộ các lần làm hợp đồng). Mã của khách hàng được truyền vào như là 1 tham số của function này.
 
 SET GLOBAL log_bin_trust_function_creators = 1;
 
@@ -639,7 +690,9 @@ select func_tinh_thoi_gian_hop_dong(5);
 
 
 
--- 28.	Tạo Stored Procedure sp_xoa_dich_vu_va_hd_room để tìm các dịch vụ được thuê bởi khách hàng với loại dịch vụ là “Room” từ đầu năm 2015 đến hết năm 2019 để xóa thông tin của các dịch vụ đó (tức là xóa các bảng ghi trong bảng dich_vu) và xóa những hop_dong sử dụng dịch vụ liên quan (tức là phải xóa những bản gi trong bảng hop_dong) và những bản liên quan khác.
+-- 28.	Tạo Stored Procedure sp_xoa_dich_vu_va_hd_room để tìm các dịch vụ được thuê bởi khách hàng với loại dịch vụ là “Room” từ
+-- đầu năm 2015 đến hết năm 2019 để xóa thông tin của các dịch vụ đó (tức là xóa các bảng ghi trong bảng dich_vu) và xóa những hop_dong
+-- sử dụng dịch vụ liên quan (tức là phải xóa những bản gi trong bảng hop_dong) và những bản liên quan khác.
 
 DELIMITER //
 CREATE PROCEDURE sp_xoa_dich_vu_va_hd_room()
