@@ -18,7 +18,7 @@ FROM
 	khach_hang
 WHERE
 	TIMESTAMPDIFF(Year,ngay_sinh,now())  BETWEEN 18 AND 50
-	and(dia_chi like '%Da Nang%'
+	and (dia_chi like '%Da Nang%'
 		OR dia_chi like '%Quang Tri%');
 
 
@@ -47,6 +47,8 @@ ORDER BY
 --	Giá là từ bảng dich_vu_di_kem, hop_dong_chi_tiet) cho tất cả các khách hàng đã từng đặt phòng.
 --	(những khách hàng nào chưa từng đặt phòng cũng phải hiển thị ra).
 
+
+-- solution1
 SELECT
     ma_khach_hang,
     ho_ten,
@@ -76,34 +78,100 @@ from
     ) t USING(ma_hop_dong)
 GROUP BY
     ma_hop_dong;
-    
-	
+
+-- solution2
+select
+    distinct khach_hang.ma_khach_hang,
+    khach_hang.ho_ten,
+    loai_khach.ten_loai_khach,
+    hop_dong.ma_hop_dong,
+    dich_vu.ten_dich_vu,
+    hop_dong.ngay_lam_hop_dong,
+    hop_dong.ngay_ket_thuc,
+    sum(
+        if (
+            hop_dong_chi_tiet.so_luong is null,
+            0,
+            hop_dong_chi_tiet.so_luong * dich_vu_di_kem.gia
+        )
+    ) + dich_vu.chi_phi_thue as Tong_Tien
+from
+    khach_hang
+    left join loai_khach on khach_hang.ma_loai_khach = loai_khach.ma_loai_khach
+    left join hop_dong on khach_hang.ma_khach_hang = hop_dong.ma_khach_hang
+    left join dich_vu on hop_dong.ma_dich_vu = dich_vu.ma_dich_vu
+    left join hop_dong_chi_tiet on hop_dong.ma_hop_dong = hop_dong_chi_tiet.ma_hop_dong
+    left join dich_vu_di_kem on hop_dong_chi_tiet.ma_dich_vu_di_kem = dich_vu_di_kem.ma_dich_vu_di_kem
+group by
+    hop_dong.ma_hop_dong;
+
     
 -- 6.	Hiển thị ma_dich_vu, ten_dich_vu, dien_tich, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ
 --	chưa từng được khách hàng thực hiện đặt từ quý 1 của năm 2021 (Quý 1 là tháng 1, 2, 3).
 
+
+-- solution1
 SELECT
     ma_dich_vu,
     ten_dich_vu,
     dien_tich,
     chi_phi_thue,
     ten_loai_dich_vu
-from
+FROM
     dich_vu
     JOIN loai_dich_vu USING (ma_loai_dich_vu)
 WHERE
-    ma_dich_vu not in (
+    ma_dich_vu NOT IN (
         SELECT
             ma_dich_vu
-        from
-            dich_vu
-            join hop_dong using (ma_dich_vu)
+        FROM
+            hop_dong
         WHERE
-            month(ngay_lam_hop_dong) BETWEEN 1
-            and 3
-            and year(ngay_lam_hop_dong) = 2021
+            YEAR(ngay_lam_hop_dong) = 2021
+            AND QUARTER(ngay_lam_hop_dong) = 1
     );
-
+	
+	
+-- solution2	
+SELECT
+    ma_dich_vu,
+    ten_dich_vu,
+    dien_tich,
+    chi_phi_thue,
+    ten_loai_dich_vu
+FROM
+    dich_vu
+    JOIN loai_dich_vu USING (ma_loai_dich_vu)
+WHERE
+    NOT EXISTS (
+        SELECT
+            1
+        FROM
+            hop_dong
+        WHERE
+            YEAR(ngay_lam_hop_dong) = 2021
+            AND QUARTER(ngay_lam_hop_dong) = 1
+            AND dich_vu.ma_dich_vu = hop_dong.ma_dich_vu
+    );
+	
+	
+-- solution3	
+SELECT
+    dv.ma_dich_vu,
+    ten_dich_vu,
+    dien_tich,
+    chi_phi_thue,
+    ten_loai_dich_vu
+FROM
+    dich_vu dv
+    JOIN loai_dich_vu USING (ma_loai_dich_vu)
+    LEFT JOIN hop_dong hd ON dv.ma_dich_vu = hd.ma_dich_vu
+    AND YEAR(hd.ngay_lam_hop_dong) = 2021
+    AND QUARTER(hd.ngay_lam_hop_dong) = 1
+WHERE
+    hd.ma_dich_vu IS NULL
+GROUP BY
+    dv.ma_dich_vu;
 
 
 -- 7.	Hiển thị thông tin ma_dich_vu, ten_dich_vu, dien_tich, so_nguoi_toi_da, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ
@@ -168,8 +236,8 @@ FROM
 -- 9.	Thực hiện thống kê doanh thu theo tháng, nghĩa là tương ứng với mỗi tháng trong năm 2021 thì sẽ có bao nhiêu khách hàng thực hiện đặt phòng.
 
 SELECT
-    tmp.thang,
-    IFNULL(co.so_lan_khach_dat, 0)
+    thang,
+    IFNULL(so_lan_khach_dat, 0)
 FROM
     (
         SELECT
@@ -207,7 +275,7 @@ FROM
         UNION
         SELECT
             12 AS thang
-    ) AS tmp
+    ) t
     LEFT JOIN (
         SELECT
             month(ngay_lam_hop_dong) AS thang,
@@ -218,7 +286,7 @@ FROM
             YEAR(ngay_lam_hop_dong) = '2021'
         GROUP BY
             thang
-    ) AS co USING (thang);
+    ) c USING (thang);
 
 
 
@@ -229,12 +297,12 @@ SELECT
     hd.ma_hop_dong,
     hd.ngay_lam_hop_dong,
     hd.ngay_ket_thuc,
-    sum(hd.tien_dat_coc) tong_tien_coc,
-    IFNULL(sum(hdct.so_luong), 0) so_luong_dich_vu_di_kem
+    SUM(hd.tien_dat_coc) tong_tien_coc,
+    IFNULL(SUM(hdct.so_luong), 0) so_luong_dich_vu_di_kem
 FROM
     hop_dong hd
-    left JOIN hop_dong_chi_tiet hdct ON hd.ma_hop_dong = hdct.ma_hop_dong
-GROUP by
+    LEFT JOIN hop_dong_chi_tiet hdct ON hd.ma_hop_dong = hdct.ma_hop_dong
+GROUP BY
     hd.ma_hop_dong;
 	
 	
@@ -244,7 +312,7 @@ GROUP by
 SELECT
     ma_dich_vu_di_kem,
     ten_dich_vu_di_kem
-from
+FROM
     dich_vu_di_kem
     JOIN hop_dong_chi_tiet USING (ma_dich_vu_di_kem)
     JOIN hop_dong hd USING (ma_hop_dong)
@@ -252,9 +320,9 @@ from
     JOIN loai_khach USING (ma_loai_khach)
 WHERE
     ten_loai_khach = 'Diamond'
-    and (
-        dia_chi like '%Vinh%'
-        or dia_chi like '%Quang Ngai%'
+    AND (
+        dia_chi LIKE '%Vinh%'
+        OR dia_chi LIKE '%Quang Ngai%'
     );
 
 
@@ -272,7 +340,7 @@ SELECT
     SUM(tien_dat_coc) tong_tien_coc,
     SUM(so_luong) tong_so_luong_dvdk,
     ngay_lam_hop_dong
-from
+FROM
     hop_dong
     LEFT JOIN nhan_vien nv USING (ma_nhan_vien)
     LEFT JOIN dich_vu USING (ma_dich_vu)
@@ -473,18 +541,19 @@ WHERE
 	
 -- 18.	Xóa những khách hàng có hợp đồng trước năm 2021 (chú ý ràng buộc giữa các bảng).
 -- After set CASCADE or SET FOREIGN_KEY_CHECKS=OFF;
-	
+
+-- maybe have to change fk cascade delete on hop_dong, hop_dong_chi_tiet table	
 DELETE FROM
     khach_hang kh
 WHERE
-    NOT EXISTS (
+    EXISTS (
         select
             1
         FROM
             hop_dong
         WHERE
             kh.ma_khach_hang = ma_khach_hang
-            and YEAR(ngay_lam_hop_dong) >= 2021
+            and YEAR(ngay_lam_hop_dong) < 2021
     );
 	
 	
